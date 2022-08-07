@@ -48,10 +48,10 @@ local maskFields(object, maskFields) = {
     then { [volume]: {} for volume in volumes }
     else volumes
   ),
-  ComposeFile(services, volumes={}): {services: services, volumes: Volumes(volumes)},
+  ComposeFile(services, volumes={}): {services: services, volumes: $.Volumes(volumes)},
   composeFileDeployments(deployments): (
     local volumes = std.flatMap(function(d) d.volumes, deployments);
-    ComposeFile(
+    $.ComposeFile(
       services={
         [serviceName]: deployment.services[serviceName]
         for deployment in deployments
@@ -59,7 +59,7 @@ local maskFields(object, maskFields) = {
       },
       volumes=std.foldl(
         function(volumeMap, deployment) (
-          volumeMap + Volumes(deployment.volumes)
+          volumeMap + $.Volumes(deployment.volumes)
         ),
         deployments,
         {}
