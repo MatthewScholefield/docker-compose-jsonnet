@@ -48,6 +48,18 @@ local maskFields(object, maskFields) = {
     interval: interval,
     timeout: timeout,
   },
+  DeploymentConfig(config): if $.usingSwarm then config else {},
+  RollingDeploymentConfig(): $.DeploymentConfig({
+    update_config: {
+      order: 'start-first',
+      failure_action: 'rollback',
+      delay: '10s',
+    },
+    rollback_config: {
+      parallelism: 0,
+      order: 'stop-first',
+    },
+  }),
   Volumes(volumes): (
     if std.isArray(volumes)
     then { [volume]: {} for volume in volumes }
