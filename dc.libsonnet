@@ -43,6 +43,11 @@ local maskFields(object, maskFields) = {
     services: services,
     volumes: volumes,
   },
+  HealthCheck(command, interval='15s', timeout='10s'): {
+    test: command,
+    interval: interval,
+    timeout: timeout,
+  },
   Volumes(volumes): (
     if std.isArray(volumes)
     then { [volume]: {} for volume in volumes }
