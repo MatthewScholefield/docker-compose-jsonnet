@@ -58,10 +58,11 @@ local maskFields(object, maskFields) = {
     then { [network]: {} for network in networks }
     else networks
   ),
-  ComposeFile(services, volumes={}, networks={}): {
+  ComposeFile(services, volumes={}, networks={}, configs={}): {
     services: services,
     volumes: $.Volumes(volumes),
-    networks: $.Networks(networks)
+    networks: $.Networks(networks),
+    configs: configs
   },
   composeFileDeployments(deployments): (
     local volumes = std.flatMap(function(d) d.volumes, deployments);
