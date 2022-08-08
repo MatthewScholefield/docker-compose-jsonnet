@@ -1,6 +1,4 @@
 
-local useSwarm = std.extVar('useSwarm'); // Must be passed to jsonnet like `--ext-code useSwarm=true`
-
 local maskFields(object, maskFields) = {
   [field]: object[field]
   for field in std.objectFields(object)
@@ -8,9 +6,10 @@ local maskFields(object, maskFields) = {
 };
 
 {
+  usingSwarm: std.extVar('useSwarm'), // Must be passed to jsonnet like `--ext-code useSwarm=true`
   Service(config): (
     local _config = { restart: 'unless-stopped' } + config;
-    if useSwarm then maskFields(_config, ['restart', 'expose', 'build', 'links']) else _config
+    if $.usingSwarm then maskFields(_config, ['restart', 'expose', 'build', 'links']) else _config
   ),
   BindMount(source, target): {
     type: 'bind',
@@ -39,6 +38,7 @@ local maskFields(object, maskFields) = {
     if valuesMap[key] != null
   ],
   localImage(image): '127.0.0.1:5000/%s' % [image],
+  labelAttributes(labels): if $.usingSwarm then {deploy: {labels: labels}} else {labels: labels},
   Deployment(services, volumes=[]): {
     services: services,
     volumes: volumes,
