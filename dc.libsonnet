@@ -48,7 +48,16 @@ local maskFields(object, maskFields) = {
     then { [volume]: {} for volume in volumes }
     else volumes
   ),
-  ComposeFile(services, volumes={}): {services: services, volumes: $.Volumes(volumes)},
+  Networks(networks): (
+    if std.isArray(networks)
+    then { [network]: {} for network in networks }
+    else networks
+  ),
+  ComposeFile(services, volumes={}, networks={}): {
+    services: services,
+    volumes: $.Volumes(volumes),
+    networks: $.Networks(networks)
+  },
   composeFileDeployments(deployments): (
     local volumes = std.flatMap(function(d) d.volumes, deployments);
     $.ComposeFile(
