@@ -79,10 +79,11 @@ local maskFields(object, maskFields) = {
     for volume in volumes
   },
   ComposeFile(services, volumes={}, networks={}, configs={}, onlyVolumes=false): {
+    version: '3.8',
     services: if onlyVolumes then $.volumeServices(volumes) else services,
     volumes: $.Volumes(volumes),
     networks: $.Networks(networks),
-    configs: configs
+    configs: configs,
   },
   composeFileDeployments(deployments): (
     local volumes = std.flatMap(function(d) d.volumes, deployments);
