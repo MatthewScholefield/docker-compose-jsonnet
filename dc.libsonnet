@@ -70,8 +70,16 @@ local maskFields(object, maskFields) = {
     then { [network]: {} for network in networks }
     else networks
   ),
-  ComposeFile(services, volumes={}, networks={}, configs={}): {
-    services: services,
+  volumeServices(volumes):: {
+    ['volume-container_' + volume]: $.Service({
+      image: 'alpine:3.15',
+      command: 'sleep 99999909',
+      volumes: ['%s:/volume' % volume]
+    })
+    for volume in volumes
+  },
+  ComposeFile(services, volumes={}, networks={}, configs={}, onlyVolumes=false): {
+    services: if onlyVolumes then $.volumeServices(volumes) else services,
     volumes: $.Volumes(volumes),
     networks: $.Networks(networks),
     configs: configs
