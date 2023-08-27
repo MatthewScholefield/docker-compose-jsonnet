@@ -39,9 +39,10 @@ local maskFields(object, maskFields) = {
   ],
   localImage(image): '127.0.0.1:5000/%s' % [image],
   labelAttributes(labels): if $.usingSwarm then {deploy: {labels: labels}} else {labels: labels},
-  Deployment(services, volumes=[]): {
+  Deployment(services, volumes=[], networks={}): {
     services: services,
     volumes: volumes,
+    networks: networks,
   },
   HealthCheck(command, interval='15s', timeout='10s'): {
     test: command,
@@ -99,7 +100,74 @@ local maskFields(object, maskFields) = {
         ),
         deployments,
         {}
-      )
+      ),
+      networks={
+        [networkName]: deployment.networks[networkName]
+        for deployment in deployments
+        for networkName in std.objectFields(deployment.networks)
+      }
     )
-  )
+  ),
+  rewriteDeployment(composeFile, folderName, networks=[]): (
+    std.mergePatch(
+      composeFile,
+      {
+        services: {
+          [service]: {
+            [if std.objectHas(composeFile.services[service], 'build') &&
+                std.objectHas(composeFile.services[service].build, 'context') then 'build']: {
+              context: '%s/%s' % [folderName, composeFile.services[service].build.context],
+            },
+            [if std.length(networks) > 0 then 'networks']: networks,
+          }
+          for service in std.objectFields(composeFile.services)
+        },
+      }
+    )
+  ),
+  apps: {
+    caddyDeployment(openPorts, networks=[]): $.Deployment(
+      services={
+        caddy: $.Service({
+          image: 'lucaslorentz/caddy-docker-proxy:2.7.1-alpine',
+          volumes: [
+            '/var/run/docker.sock:/var/run/docker.sock',
+            'caddy-data-volume:/data',
+            'caddy-config-volume:/config',
+          ],
+          deploy: $.DeploymentConfig({
+            placement: { constraints: ['node.role == manager'] },
+            update_config: {
+              order: 'stop-first',
+              failure_action: 'rollback',
+              delay: '3s',
+            },
+            rollback_config: {
+              parallelism: 0,
+              order: 'stop-first',
+            },
+          }),
+          [if std.length(networks) > 0 then 'networks']: networks,
+          environment: $.Env({
+            [if std.length(networks) > 0 then 'CADDY_INGRESS_NETWORKS']: std.join(',', networks),
+          }),
+          restart: 'unless-stopped',
+        } + $.bindOrExpose(openPorts, bindToHost=$.usingSwarm)),
+      },
+      volumes=[
+        'caddy-data-volume',
+        'caddy-config-volume',
+      ],
+      networks={
+        [network]: { external: true }
+        for network in networks
+      }
+    ),
+    // url can be http://localhost:1234 but 1234 needs to be added to openPorts
+    caddyProxyConfig(url, containerPort): $.labelAttributes({
+      caddy: url,
+      'caddy.reverse_proxy': '{{upstreams %s}}' % [containerPort],
+      'caddy.header': '/* { -Server }',
+    })
+  }
 }
