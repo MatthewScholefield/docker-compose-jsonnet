@@ -1,4 +1,3 @@
-
 local maskFields(object, maskFields) = {
   [field]: object[field]
   for field in std.objectFields(object)
@@ -6,7 +5,7 @@ local maskFields(object, maskFields) = {
 };
 
 {
-  usingSwarm: std.extVar('useSwarm'), // Must be passed to jsonnet like `--ext-code useSwarm=true`
+  usingSwarm: std.extVar('useSwarm'),  // Must be passed to jsonnet like `--ext-code useSwarm=true`
   Service(config): (
     local _config = { restart: 'unless-stopped' } + config;
     if $.usingSwarm then maskFields(_config, ['restart', 'expose', 'build', 'links']) else _config
@@ -38,7 +37,7 @@ local maskFields(object, maskFields) = {
     if valuesMap[key] != null
   ],
   localImage(image): '127.0.0.1:5000/%s' % [image],
-  labelAttributes(labels): if $.usingSwarm then {deploy: {labels: labels}} else {labels: labels},
+  labelAttributes(labels): if $.usingSwarm then { deploy: { labels: labels } } else { labels: labels },
   Deployment(services, volumes=[], networks={}): {
     services: services,
     volumes: volumes,
@@ -75,7 +74,7 @@ local maskFields(object, maskFields) = {
     ['volume-container_' + volume]: $.Service({
       image: 'alpine:3.15',
       command: 'sleep 99999909',
-      volumes: ['%s:/volume' % volume]
+      volumes: ['%s:/volume' % volume],
     })
     for volume in volumes
   },
@@ -87,23 +86,24 @@ local maskFields(object, maskFields) = {
     configs: configs,
   },
   composeFileDeployments(deployments): (
-    local volumes = std.flatMap(function(d) d.volumes, deployments);
+    local filteredDeployments = [x for x in deployments if x != null];
+    local volumes = std.flatMap(function(d) d.volumes, filteredDeployments);
     $.ComposeFile(
       services={
         [serviceName]: deployment.services[serviceName]
-        for deployment in deployments
+        for deployment in filteredDeployments
         for serviceName in std.objectFields(deployment.services)
       },
       volumes=std.foldl(
         function(volumeMap, deployment) (
           volumeMap + $.Volumes(deployment.volumes)
         ),
-        deployments,
+        filteredDeployments,
         {}
       ),
       networks={
         [networkName]: deployment.networks[networkName]
-        for deployment in deployments
+        for deployment in filteredDeployments
         for networkName in std.objectFields(deployment.networks)
       }
     )
@@ -169,6 +169,6 @@ local maskFields(object, maskFields) = {
       caddy: url,
       'caddy.reverse_proxy': '{{upstreams %s}}' % [containerPort],
       'caddy.header': '/* { -Server }',
-    })
-  }
+    }),
+  },
 }
