@@ -126,7 +126,8 @@ local maskFields(object, maskFields) = {
     )
   ),
   apps: {
-    caddyDeployment(openPorts, networks=[]): $.Deployment(
+    // Find networks with `docker network ls`
+    caddyDeployment(openPorts, networks): $.Deployment(
       services={
         caddy: $.Service({
           image: 'lucaslorentz/caddy-docker-proxy:2.7.1-alpine',
