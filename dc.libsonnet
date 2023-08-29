@@ -127,7 +127,8 @@ local maskFields(object, maskFields) = {
   ),
   apps: {
     // Find networks with `docker network ls`
-    caddyDeployment(openPorts, networks): $.Deployment(
+    CaddyStaticSite(url, localPath): { url: url, localPath: localPath },
+    caddyDeployment(openPorts, networks, staticSites=[]): $.Deployment(
       services={
         caddy: $.Service({
           image: 'lucaslorentz/caddy-docker-proxy:2.7.1-alpine',
@@ -135,7 +136,7 @@ local maskFields(object, maskFields) = {
             '/var/run/docker.sock:/var/run/docker.sock',
             'caddy-data-volume:/data',
             'caddy-config-volume:/config',
-          ],
+          ] + ['%s:%s' % [x.localPath, x.localPath] for x in staticSites],
           deploy: $.DeploymentConfig({
             placement: { constraints: ['node.role == manager'] },
             update_config: {
@@ -153,7 +154,16 @@ local maskFields(object, maskFields) = {
             [if std.length(networks) > 0 then 'CADDY_INGRESS_NETWORKS']: std.join(',', networks),
           }),
           restart: 'unless-stopped',
-        } + $.bindOrExpose(openPorts, bindToHost=$.usingSwarm)),
+        } + $.bindOrExpose(openPorts, bindToHost=$.usingSwarm)) + (
+          if std.length(staticSites) > 0 then $.labelAttributes(std.flattenArrays([
+            [
+              'caddy=%s' % [x.url],
+              'caddy.root=* %s' % [x.localPath],
+              'caddy.file_server=',
+            ]
+            for x in staticSites
+          ])) else []
+        ),
       },
       volumes=[
         'caddy-data-volume',
