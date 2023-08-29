@@ -114,9 +114,8 @@ local maskFields(object, maskFields) = {
       {
         services: {
           [service]: {
-            [if std.objectHas(composeFile.services[service], 'build') &&
-                std.objectHas(composeFile.services[service].build, 'context') then 'build']: {
-              context: '%s/%s' % [folderName, composeFile.services[service].build.context],
+            [if std.objectHas(composeFile.services[service], 'build') then 'build']: {
+              context: '%s/%s' % [folderName, if std.objectHas(composeFile.services[service].build, 'context') then composeFile.services[service].build.context else ''],
             },
             [if std.length(networks) > 0 then 'networks']: networks,
           }
