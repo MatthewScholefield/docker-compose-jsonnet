@@ -173,7 +173,7 @@ local maskFields(object, maskFields) = {
               'caddy.file_server=',
             ]
             for x in staticSites
-          ])) else []
+          ])) else {}
         ),
       },
       volumes=[
