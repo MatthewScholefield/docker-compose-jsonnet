@@ -37,7 +37,19 @@ local maskFields(object, maskFields) = {
     if valuesMap[key] != null
   ],
   localImage(image): '127.0.0.1:5000/%s' % [image],
-  labelAttributes(labels): if $.usingSwarm then { deploy: { labels: labels } } else { labels: labels },
+  labelAttributes(labels): (
+    local isObject(obj) = if obj == {} then true else if std.type(obj) == "object" then true else false;
+    local formattedLabels =
+      if isObject(labels) then
+        [k + "=" + labels[k] for k in std.objectFields(labels)]
+      else
+        labels;
+
+    if $.usingSwarm then
+      { deploy: { labels: formattedLabels } }
+    else
+      { labels: formattedLabels },
+  ),
   Deployment(services, volumes=[], networks={}): {
     services: services,
     volumes: volumes,
