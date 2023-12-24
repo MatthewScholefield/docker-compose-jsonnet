@@ -168,14 +168,13 @@ local maskFields(object, maskFields) = {
         } + $.bindOrExpose(openPorts, bindToHost=$.usingSwarm)) + (
           if std.length(staticSites) > 0 then $.labelAttributes(std.flattenArrays([
             [
-              'caddy=%s' % [x.url],
-              'caddy.root=* %s' % [x.localPath],
+              'caddy_%s=%s' % [i, staticSites[i].url],
+              'caddy_%s.root=* %s' % [i, staticSites[i].localPath],
+              'caddy_%s.try_files={path} /index.html' % [i],
+              'caddy_%s.file_server=' % [i],
             ]
-            for x in staticSites
-          ]) + [
-            'caddy.try_files={path} /index.html',
-            'caddy.file_server=',
-          ]) else {}
+            for i in std.range(0, std.length(staticSites) - 1)
+          ])) else {}
         ),
       },
       volumes=[
