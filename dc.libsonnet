@@ -170,11 +170,12 @@ local maskFields(object, maskFields) = {
             [
               'caddy=%s' % [x.url],
               'caddy.root=* %s' % [x.localPath],
-              'caddy.try_files={path} /index.html',
-              'caddy.file_server=',
             ]
             for x in staticSites
-          ])) else {}
+          ]) + [
+            'caddy.try_files={path} /index.html',
+            'caddy.file_server=',
+          ]) else {}
         ),
       },
       volumes=[
