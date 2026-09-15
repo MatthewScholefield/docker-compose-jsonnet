@@ -141,7 +141,7 @@ local maskFields(object, maskFields) = {
     caddyDeployment(openPorts, networks, staticSites=[]): $.Deployment(
       services={
         caddy: $.Service({
-          image: 'lucaslorentz/caddy-docker-proxy:2.7.1-alpine',
+          image: 'lucaslorentz/caddy-docker-proxy:2.9.1-alpine',
           volumes: [
             '/var/run/docker.sock:/var/run/docker.sock',
             'caddy-data-volume:/data',
