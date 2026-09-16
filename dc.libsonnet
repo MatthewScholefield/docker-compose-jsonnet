@@ -31,6 +31,24 @@ local maskFields(object, maskFields) = {
     else
       { expose: ['%s' % [port] for port in ports] }
   ),
+  bindPort(port, protocol='tcp', bindToHost=false): {
+    ports: [
+      if bindToHost then {
+        mode: 'host',
+        protocol: protocol,
+        published: port,
+        target: port,
+      } else '%s:%s/%s' % [port, port, protocol],
+    ],
+  },
+  bindCaddyPorts(openPorts, bindToHost=false): (
+    local tcpBindings = $.bindOrExpose(openPorts, bindToHost=bindToHost);
+    if std.member(openPorts, 443) then
+      tcpBindings + {
+        ports: tcpBindings.ports + $.bindPort(443, protocol='udp', bindToHost=bindToHost).ports,
+      }
+    else tcpBindings
+  ),
   Env(valuesMap): [
     '%s=%s' % [key, valuesMap[key]]
     for key in std.objectFields(valuesMap)
@@ -164,7 +182,7 @@ local maskFields(object, maskFields) = {
             [if std.length(networks) > 0 then 'CADDY_INGRESS_NETWORKS']: std.join(',', networks),
           }),
           restart: 'unless-stopped',
-        } + $.bindOrExpose(openPorts, bindToHost=$.usingSwarm)) + (
+        } + $.bindCaddyPorts(openPorts, bindToHost=$.usingSwarm)) + (
           if std.length(staticSites) > 0 then $.labelAttributes(std.flattenArrays([
             [
               'caddy_%s=%s' % [i, staticSites[i].url],
