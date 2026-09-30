@@ -6,6 +6,11 @@ Using jsonnet to write docker-compose files is useful for DRY and to allow dynam
 
 This library makes it easier to specify a deployment while handling a few edge cases around these field differences.
 
+`apps.caddyDeployment` pins `lucaslorentz/caddy-docker-proxy:2.13.1-alpine`
+(Caddy core 2.11.4). Service-task upstream discovery and routing are unchanged.
+The image update replaces the Caddy container; single-replica host-port Swarm
+deployments use stop-first updates and may briefly interrupt traffic.
+
 ## Usage
 
 To use this library, simply clone it as a submodule and import the `.libsonnet` file in your own `jsonnet` file:
